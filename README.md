@@ -12,7 +12,7 @@ This application is designed as a demo for interview presentations at online edu
 - React frontend with TypeScript
 - Real-time quiz functionality with scoring
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React 18** with TypeScript
