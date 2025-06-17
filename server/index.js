@@ -7,6 +7,8 @@ const helmet = require('helmet');
 const { pool } = require('./config/database');
 const quizzesRouter = require('./routes/quizzes');
 const authRouter = require('./routes/auth');
+const experienceRouter = require('./routes/experience');
+const userRouter = require('./routes/user');
 
 // Create Express application
 const app = express();
@@ -23,6 +25,8 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // Routes
 app.use('/api/quizzes', quizzesRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/experience', experienceRouter);
+app.use('/api/user', userRouter);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {

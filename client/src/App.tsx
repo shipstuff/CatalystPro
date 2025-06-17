@@ -11,6 +11,11 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showSignup, setShowSignup] = useState(false);
+  const [isQuizActive, setIsQuizActive] = useState(false);
+  const [activeQuiz, setActiveQuiz] = useState<any>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState('');
+  const [experiencePoints, setExperiencePoints] = useState(0);
 
   // Test connection to our backend
   useEffect(() => {
@@ -45,9 +50,27 @@ const App: React.FC = () => {
     const token = localStorage.getItem('token');
     if (token) {
       setIsLoggedIn(true);
+      fetchUserProfile();
       console.log('Found existing token, user is logged in');
     }
   }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch('/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCurrentUser(data.user);
+        console.log('User profile fetched:', data.user);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const handleQuizClick = async (quiz: any) => {
     setSelectedQuiz(quiz);
@@ -59,6 +82,44 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.log('Failed to fetch questions');
+    }
+  };
+
+  const handleNextQuestion = async () => {
+    const currentQuestion = questions[currentQuestionIndex];
+    const isCorrect = selectedAnswer === currentQuestion.correct_answer;
+    
+    console.log(`Answer: ${selectedAnswer}, Correct: ${currentQuestion.correct_answer}, Result: ${isCorrect ? 'RIGHT' : 'WRONG'}`);
+    
+    if (isCorrect) {
+      console.log('Awarding experience points...');
+      try {
+        const response = await fetch('/api/experience/award', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            amount: 1
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          setCurrentUser(data.user);
+          console.log('Experience points awarded:', data.user.experience);
+        }
+      } catch (error) {
+        console.error('Error awarding experience points:', error);
+      }
+    }
+    
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelectedAnswer('');
+    } else {
+      console.log('Quiz completed');
+      setIsQuizActive(false);
     }
   };
 
@@ -93,6 +154,7 @@ const App: React.FC = () => {
         <LoginForm 
           onLoginSuccess={() => {
             setIsLoggedIn(true);
+            fetchUserProfile();
             console.log('Login status updated in App');
           }} 
         />
@@ -132,6 +194,10 @@ const App: React.FC = () => {
             Logout
           </button>
         )}
+
+        <div style={{ marginTop: '10px', textAlign: 'right' }}>
+          <strong>Experience Points:</strong> {currentUser?.experience || experiencePoints}
+        </div>
       </div>
       
       <div style={{ marginTop: '20px' }}>
@@ -146,6 +212,27 @@ const App: React.FC = () => {
                 >
                   <strong>{quiz.title}</strong> ({quiz.subject}) - {quiz.difficulty_level}
                 </button>
+
+                {isLoggedIn && (
+                  <button
+                    onClick={() => {
+                      setIsQuizActive(true);
+                      setActiveQuiz(quiz);
+                      setCurrentQuestionIndex(0);
+                      setSelectedAnswer('');
+                      handleQuizClick(quiz);
+                    }}
+                    style={{
+                      padding: '5px 10px', 
+                      backgroundColor: '#28a745', 
+                      color: 'white', 
+                      border: 'none', 
+                      cursor: 'pointer' 
+                    }}
+                    >
+                    Take Quiz
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -154,26 +241,44 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {selectedQuiz && (
-        <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #ccc' }}>
-          <h3>Questions for: {selectedQuiz.title}</h3>
-          {questions.length > 0 ? (
-            <ol>
-              {questions.map(question => (
-                <li key={question.id} style={{ marginBottom: '15px' }}>
-                  <strong>{question.question_text}</strong>
-                  <ul style={{ marginTop: '5px' }}>
-                    <li>A) {question.option_a}</li>
-                    <li>B) {question.option_b}</li>
-                    <li>C) {question.option_c}</li>
-                    <li>D) {question.option_d}</li>
-                  </ul>
-                </li>
+      {isQuizActive && questions.length > 0 && (
+        <div style={{ marginTop: '20px', padding: '20px', border: '2px solid #007bff', backgroundColor: '#f8f9fa' }}>
+          <h2>Taking Quiz: {activeQuiz?.title}</h2>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <strong>Question {currentQuestionIndex + 1} of {questions.length}</strong>
+          </div>
+          
+          <div style={{ marginBottom: '30px' }}>
+            <h3>{questions[currentQuestionIndex]?.question_text}</h3>
+          </div>
+          
+          <div>
+          <div style={{ marginBottom: '30px' }}>
+              {['A', 'B', 'C', 'D'].map(option => (
+                <div key={option} style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="quiz-answer"
+                      value={option}
+                      checked={selectedAnswer === option}
+                      onChange={(e) => setSelectedAnswer(e.target.value)}
+                      style={{ marginRight: '10px' }}
+                    />
+                    {option}) {questions[currentQuestionIndex]?.[`option_${option.toLowerCase()}`]}
+                  </label>
+                </div>
               ))}
-            </ol>
-          ) : (
-            <p>Loading questions...</p>
-          )}
+            </div>
+            <p>Current selection: {selectedAnswer || 'None selected'}</p>
+            <button 
+              onClick={handleNextQuestion}
+              style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', cursor: 'pointer' }}
+            >
+              {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+            </button>
+          </div>
         </div>
       )}
     </div>
