@@ -2,7 +2,7 @@ const express = require('express');
 const { pool } = require('../config/database');
 const router = express.Router();
 
-// GET /api/quizzes - Get all quizzes
+// get all quizzes
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM quizzes');
@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
     }
 });
 
+// get questions for a quiz
 router.get('/:id/questions', async (req, res) => {
     try {
       const quizId = req.params.id;

@@ -161,7 +161,7 @@ const App: React.FC = () => {
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1>Catalyst Pro</h1>
-      <p>Educational Quiz Platform For Dummies like you!</p>
+      <p>Educational Quiz Platform</p>
       
       <div style={{ marginBottom: '20px' }}>
         <button 
