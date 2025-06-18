@@ -9,6 +9,7 @@ const quizzesRouter = require('./routes/quizzes');
 const authRouter = require('./routes/auth');
 const experienceRouter = require('./routes/experience');
 const userRouter = require('./routes/user');
+const aiRouter = require('./routes/ai');
 
 // Create Express application
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/quizzes', quizzesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/experience', experienceRouter);
 app.use('/api/user', userRouter);
+app.use('/api/ai', aiRouter);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
